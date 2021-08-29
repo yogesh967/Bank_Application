@@ -43,15 +43,18 @@ public class Main_App {
             System.out.println("File not found!");
         }
 
+        System.out.println("\n================ Welcome to XYZ bank ================\n");
+
         do {
-            System.out.println("====================================================================================================");
-            System.out.println("Menu");
-            System.out.println("====================================================================================================");
+            System.out.println("-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o");
+            System.out.println("*********************** Menu ***********************");
+            System.out.println("-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o");
             System.out.println("1. NEW ACCOUNT");
             System.out.println("2. CUSTOMER DETAILS");
-            System.out.println("3. DEPOSIT AMOUNT");
-            System.out.println("4. WITHDRAW AMOUNT");
-            System.out.println("5. TRANSACTION HISTORY");
+            System.out.println("3. SEARCH CUSTOMER");
+            System.out.println("4. DEPOSIT AMOUNT");
+            System.out.println("5. WITHDRAW AMOUNT");
+            System.out.println("6. TRANSACTION HISTORY");
             System.out.println("0. EXIT");
 
             System.out.print("Enter your choice: ");
@@ -129,8 +132,39 @@ public class Main_App {
                     }
                     break;
 
-                // Deposit amt
+                // Search customer account
                 case 3:
+                    if (newCustomer.isFile()) {
+                        int accNo;
+                        boolean found = false;
+                        System.out.print("Enter account number: ");
+                        accNo = sc.nextInt();
+
+                        System.out.println("----------------------------------------------------------------------------------------------------------------------------------------");
+                        for (NewAccount custDetail : customerList) {
+                            if (custDetail.accountNo == accNo) {
+                                System.out.println(custDetail);
+                                found = true;
+                            }
+                        }
+
+                        if (!found) {
+                            System.out.println("Not found any account by this account number");
+                        }
+                        System.out.println("----------------------------------------------------------------------------------------------------------------------------------------");
+
+
+
+                    }
+
+                    else {
+                        System.out.println("File not found!");
+                    }
+
+                    break;
+
+                // Deposit amt
+                case 4:
                     if (newCustomer.isFile() && historyFile.isFile()) {
 
                         boolean found = false;      // Flag for matching accNo found or not
@@ -147,12 +181,11 @@ public class Main_App {
                             if (na.accountNo == accNo) {
                                 System.out.println(na);
 
-                                System.out.println("Enter amount you want to deposit: ");
+                                System.out.print("Enter amount you want to deposit: ");
                                 amt = sc.nextInt();
 
                                 // Adding deposit amt to old balance
                                 newBalance = na.balance + amt;
-                                System.out.println("Balance = " +newBalance);
 
                                 // Date
                                 DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
@@ -165,6 +198,9 @@ public class Main_App {
 
                                 // Adding transaction data into TransactionList
                                 TransactionList.add(new TransactionHistory(accNo, na.name, type, amt, newBalance, TransDate));
+
+                                System.out.println("Rs. "+ amt + " credited to your account successfully");
+                                System.out.println("Balance = Rs. " +newBalance);
 
                                 found = true;
                             }
@@ -182,7 +218,6 @@ public class Main_App {
                                 oos.writeObject(TransactionList);
                                 oos.close();
 
-                                System.out.println("Amount credited successfully");
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -198,21 +233,87 @@ public class Main_App {
                     }
                     break;
 
-                case 6:
+                // Withdraw amt
+                case 5:
                     if (newCustomer.isFile() && historyFile.isFile()) {
+                        boolean found = false;      // Flag for matching accNo found or not
+                        int withAmt;                    // Withdrawal amt
+                        double newBalance;          // balance after withdrawal
+                        String type = "Debited";   // Transaction type
+
+                        System.out.print("Enter account number: ");
+                        int accNo = sc.nextInt();
+
+                        ListIterator<NewAccount> li = customerList.listIterator();
+                        while(li.hasNext()) {
+                            NewAccount na = li.next();
+                            if (na.accountNo == accNo) {
+                                System.out.println(na);
+
+                                System.out.print("Enter amount you want to withdraw: ");
+                                withAmt = sc.nextInt();
+
+                                if(na.balance - withAmt < 0) {
+                                    System.out.println("Insufficient balance");
+                                }
+
+                                else {
+                                    // Withdrawal amt - balance
+                                    newBalance = na.balance - withAmt;
+
+                                    // Date
+                                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+                                    LocalDateTime now = LocalDateTime.now();
+                                    String TransDate;
+                                    TransDate = dtf.format(now);
+
+                                    // Updating customer data
+                                    li.set(new NewAccount(accNo, na.name, na.contactNo, na.email, newBalance, na.date));
+
+                                    // Adding transaction data into TransactionList
+                                    TransactionList.add(new TransactionHistory(accNo, na.name, type, withAmt, newBalance, TransDate));
+
+                                    System.out.println("Rs. "+ withAmt + " debited from your account successfully");
+                                    System.out.println("Balance = Rs. " + newBalance);
+
+                                    found = true;
+                                }
+                            }
+                        }
+
+                        // If customer account found then write data into file
+                        if (found) {
+                            try {
+                                // Upload data into Customers file
+                                oos = new ObjectOutputStream(new FileOutputStream(newCustomer));
+                                oos.writeObject(customerList);
+                                oos.close();
+
+                                oos = new ObjectOutputStream(new FileOutputStream(historyFile));
+                                oos.writeObject(TransactionList);
+                                oos.close();
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+
+                        else {
+                            System.out.println("Account not found!");
+                        }
 
                     }
                     else {
-
+                        System.out.println("File not found!");
                     }
                     break;
 
                 // Display Transaction History
-                case 5:
+                case 6:
                     if (historyFile.isFile()) {
                         int accNum;
                         boolean found = false;
-                        System.out.println("Enter account number: ");
+                        System.out.print("Enter account number: ");
                         accNum = sc.nextInt();
 
                         System.out.println("----------------------------------------------------------------------------------------------------------------------------------------");
